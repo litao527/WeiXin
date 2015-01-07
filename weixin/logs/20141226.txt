@@ -1,0 +1,28 @@
+Log created at: 2014-12-26 13:44:52
+2014-12-26 13:44:52[WeiXinController.Index]
+     
+token:litao527
+echoStr:
+signature:
+timestamp:
+nonce:
+2014-12-26 13:44:52[WeiXinController.CheckSignature]
+     tmpStr=2bbcb4b3f2293d90a565b53190aa3136596d226b
+2014-12-26 13:45:20[weixin.ProcessRequest]
+     
+token:litao527
+echoStr:
+signature:
+timestamp:
+nonce:
+2014-12-26 13:45:20[weixin.CheckSignature]
+     tmpStr=2bbcb4b3f2293d90a565b53190aa3136596d226b
+2014-12-26 13:46:25[weixin.ProcessRequest]
+     
+token:litao527
+echoStr:
+signature:
+timestamp:
+nonce:
+2014-12-26 13:46:25[weixin.CheckSignature]
+     tmpStr=2bbcb4b3f2293d90a565b53190aa3136596d226b

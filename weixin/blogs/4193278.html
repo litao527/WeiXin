@@ -1,0 +1,48 @@
+﻿<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <title>mysql 用户管理</title>
+    <style type="text/css">
+        h3.title{
+            text-align:center;
+        }
+        .content{
+            width:70%;
+            margin:auto;
+        }
+
+    </style>
+</head>
+<body>
+    <h3 class="title">mysql 用户管理</h3>
+    <div class="content">
+        <p>1.新建用户<br />mysql&gt;create user 'root'@'localhost' identified by 'a123456';<br />mysql&gt;insert into mysql.user(Host,User,Password) values("localhost","root",password("a123456"));<br />mysql&gt;flush privileges;</p>
+<p>在mysql5.6中127.0.0.1和localhost已经不再区分，记得以前版本，如果有root@127.0.0.1，但是没有root@localhost，使用127.0.0.1可以登录，但是使用localhost不能登录。<br />host 为 %，则表示可以远程登录，但是只有%本机是不可以登录的。</p>
+<p>2.授权用户<br />mysql&gt;grant all privileges on *.* to 'root'@'localhost' identified by 'a123456';<br />mysql&gt;grant all on *.* to 'root'@'localhost' identified by 'a123456' with grant option;<br />mysql&gt;flush privileges;</p>
+<p>3.删除用户<br />mysql&gt;delete from mysql.user where user='root' and host='locahost';<br />这个条语句不可以乱执行。</p>
+<p>如果你真执行了，也没关系。后面会说解决办法。</p>
+<p>4.修改用户密码<br />mysql&gt;update mysql.user set password=password('654321a') where user='root' and host='localhost';<br />mysql&gt;flush privileges;</p>
+<p>5.修改用户<br />mysql&gt;rename user 'test2'@'localhost' to 'test'@'%'; </p>
+<p>6.回收权限<br />mysql&gt;revoke update on *.* from 'root'@'localhost';</p>
+<p>&nbsp;</p>
+<p>继续说一下上面提到的问题：假如你忘记密码或者干脆把所有用户都删掉了</p>
+<p>解决的办法就是 关闭mysql，重启。</p>
+<p>在启动命令后面添加 --skip-grant-tables 选项。即不加载系统的权限表。</p>
+<div class="cnblogs_code">
+<pre>[root@localhost mysql]# bin/mysqld_safe --skip-grant-tables &amp;</pre>
+</div>
+<p>然后再添加用户，分配权限。</p>
+<p>你可能遇到问题：</p>
+<div class="cnblogs_code">
+<pre>ERROR <span style="color: #800080;">1290</span> (HY000): The MySQL server <span style="color: #0000ff;">is</span> running with the --skip-grant-tables option so it cannot execute <span style="color: #0000ff;">this</span><span style="color: #000000;"> statement
+mysql</span>&gt; GRANT ALL PRIVILEGES ON *.* TO IDENTIFIED BY <span style="color: #800000;">'</span><span style="color: #800000;">123</span><span style="color: #800000;">'</span><span style="color: #000000;"> WITH GRANT OPTION;
+ERROR </span><span style="color: #800080;">1290</span> (HY000): The MySQL server <span style="color: #0000ff;">is</span> running with the --skip-grant-tables option so it cannot execute <span style="color: #0000ff;">this</span> statement</pre>
+</div>
+<p>这时候你只需要 ：flush privileges;</p>
+<p>然后就可以正常操作了。</p>
+<p><strong>参考：</strong></p>
+<p>http://www.cnblogs.com/iosdev/archive/2013/07/15/3190431.html</p>
+    </div>
+</body>
+</html>

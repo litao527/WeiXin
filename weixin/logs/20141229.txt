@@ -1,0 +1,4 @@
+Log created at: 2014-12-29 10:45:30
+2014-12-29 10:45:30[weixin.CheckSignature]tmpStr=2bbcb4b3f2293d90a565b53190aa3136596d226b
+2014-12-29 10:57:52[weixin.CheckSignature]tmpStr=2bbcb4b3f2293d90a565b53190aa3136596d226b
+2014-12-29 11:35:45[weixin.CheckSignature]tmpStr=2bbcb4b3f2293d90a565b53190aa3136596d226b

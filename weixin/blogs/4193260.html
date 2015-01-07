@@ -1,0 +1,83 @@
+﻿<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <title>mysql索引优化</title>
+    <style type="text/css">
+        h3.title{
+            text-align:center;
+        }
+        .content{
+            width:70%;
+            margin:auto;
+        }
+
+    </style>
+</head>
+<body>
+    <h3 class="title">mysql索引优化</h3>
+    <div class="content">
+        <h2 id="mysql-">mysql 大数据分页和索引使用</h2>
+<h3>使用覆盖索引</h3>
+<ol>
+<li>一个表建立在id,create_time上建立了索引。<br /></li>
+<li><p>如下2个sql语句，执行时间一样。 因为查询字段id被索引覆盖。</p>
+<pre><code>select id from order_manage where  create_time &gt; &#39;2014-01-01&#39;
+order by create_time desc  limit 100000,10
+
+
+select a.id from order_manage a
+inner join ( select id from order_manage 
+where  create_time &gt; &#39;2014-01-01&#39; 
+order by create_time desc limit 1000,10) b on a.id = b.id</code></pre></li>
+<li><p>如下2条sql，使用inner join要快一个数量级。 inner join影响结果集仍然是$start +30,但是数据获取的过程（Sending data状态）发生在索引文件中，而不是数据表文件，这样所需要的系统开销就比前一种普通的查询低一个数量级，而主查询的影响结果集只有30条，几乎无开销。但是切记，这里仍然涉及了太多的影响结果集操作</p>
+<p>其实也可以分成2条sql语句来做，第一条使用覆盖索引查询出id，在使用in查询出需要的字段数据。</p>
+<pre><code>select * from order_manage where  create_time &gt; &#39;2014-01-01&#39;
+order by create_time desc  limit 100000,10
+
+
+select * from order_manage a
+inner join ( select id from order_manage 
+where  create_time &gt; &#39;2014-01-01&#39; 
+order by create_time desc limit 1000,10) b on a.id = b.id</code></pre></li>
+</ol>
+<h3>上一页，下一页优化</h3>
+<ol>
+<li>背景，常见论坛帖子页 SQL: select * from post where tagid=$tagid order by lastpost limit $start, $end 翻页 。索引为 tagid+lastpost 复合索引<br />挑战， 超级热帖，几万回帖，用户频频翻到末页，limit 25770,30 一个操作下来，影响结果集巨大(25770+30)，查询缓慢。<br /></li>
+<li><p>每次查询的时候将该页查询结果中最大的 $lastpost和最小的分别记录为 $minlastpost 和 $maxlastpost</p>
+<pre><code>上翻页查询为 
+select * from post where tagid=$tagid and lastpost&lt;$minlastpost order by lastpost desc limit 30; 
+下翻页为 
+select * from post where tagid=$tagid and lastpost&gt;$maxlastpost order by lastpost limit 30;
+使用这种方式，影响结果集只有30条，效率极大提升。</code></pre></li>
+</ol>
+<h3 id="order-by">order by排序优化</h3>
+<ol>
+<li><p>如下sql :</p>
+<pre><code>select * from user where area=’$area’ and sex=’$sex’ order by lastlogin desc limit 0,30;</code></pre>
+<p>建立复合索引并， area+sex+lastlogin 三个字段的复合索引（注意顺序），order by的字段要在最后。where条件字段，唯一性最好的要在最前。</p>
+Area+sex+lastlogin复合索引时（切记lastlogin在最后），该索引基于area+sex+lastlogin 三个字段合并的结果排序。<br />也就是说，建立了复合索引，少了一次排序操作。<br /></li>
+<li>牢记数据查询只能使用一个索引，每个字段建立独立索引的情况下，也只能有一条索引被使用！<br /></li>
+<li><p>复合索引的使用是符合左边原则。a,b,c的复合索引<br />abc,ab,a,可以使用索引,其他情况都不能使用索引。<br />复合索引的使用原则是第一个条件应该是复合索引的第一列必须使用，并且不能夸列。ac是不能使用索引的。</p></li>
+</ol>
+<h3 id="msyql">msyql索引使用原则</h3>
+<ol>
+<li>牢记数据查询只能使用一个索引，每个字段建立独立索引的情况下，也只能有一条索引被使用！msyql会选择最优化的索引。当然你可以强制使用索引，不过不建议这么做。<br /></li>
+<li>在进行索引分析和SQL优化时，可以将数据索引字段想象为单一有序序列，并以此作为分析的基础。涉及到复合索引情况，复合索引按照索引顺序拼凑成一个字段，想象为单一有序序列，并以此作为分析的基础。<br /></li>
+<li><p>查询条件与索引的关系决定影响结果集</p>
+<ul>
+<li>影响结果集不是输出结果数，不是查询返回的记录数，而是索引所扫描的结果数。<br /></li>
+<li>影响结果集越趋近于实际输出或操作的目标结果集，索引效率越高<br /></li>
+<li>影响结果集与查询开销的关系可以理解为线性相关。减少一半影响结果集，即可提升一倍查询效率！当一条搜索query可以符合多个索引时，选择影响结果集最少的索引。<br /></li>
+<li>SQL的优化，核心就是对结果集的优化，认识索引是增强对结果集的判断，基于索引的认识，可以在编写SQL的时候，对该SQL可能的影响结果集有预判，并做出适当的优化和调整。<br /></li>
+<li>如果索引与查询条件和排序条件完全命中，影响结果集就是limit后面的数字（$start + $end），比如 limit 200,30 影响结果集是230. 而不是30.<br /></li>
+<li>如果索引只命中部分查询条件，甚至无命中条件，在无排序条件情况下，会在索引命中的结果集 中遍历到满足所有其他条件为止。比如 select * from user limit 10; 虽然没用到索引，但是因为不涉及二次筛选和排序，系统直接返回前10条结果，影响结果集依然只有10条，就不存在效率影响<br /></li>
+<li>如果搜索所包含的排序条件没有被索引命中，则系统会遍历是所有索引所命中的结果，并且排序。例如 Select * from user order by timeline desc limit 10; 如果timeline不是索引，影响结果集是全表，就存在需要全表数据排序，这个效率影响就巨大。再比如 Select * from user where area=’厦门’ order by timeline desc limit 10; 如果area是索引，而area+timeline未建立索引，则影响结果集是所有命中 area=’厦门’的用户，然后在影响结果集内排序。<br /></li>
+</ul></li>
+<li>基于影响结果集的理解去优化，不论从数据结构，代码，还是涉及产品策略上，都需要贯彻下去。核心就是小表驱动大表，索引的使用要筛选出最少的结果集。<br /></li>
+<li>涉及 limit $start,$num的搜索，如果$start巨大，则影响结果集巨大，搜索效率会非常难过低，尽量用其他方式改写为 limit 0,$num； 确系无法改写的情况下，先从索引结构中获得 limit $start,$num 或limit $start,1 ；再用in操作或基于索引序的 limit 0,$num 二次搜索。<br /></li>
+<li><p>外键和join尽量不用</p></li>
+</ol>
+    </div>
+</body>
+</html>
