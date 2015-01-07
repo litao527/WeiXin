@@ -86,6 +86,71 @@ namespace Common
 
 
         /// <summary>
+        /// 获取关注回复内容
+        /// </summary>
+        /// <param name="openId">微信接收者</param>
+        /// <param name="sendId">微信发送者</param>
+        /// <returns></returns>
+        public static string GetSubscribeContent(string openId, string sendId)
+        {
+            string result = "";
+            try
+            {
+                if (!string.IsNullOrEmpty(openId) && !string.IsNullOrEmpty(sendId))
+                {
+                    string items = GetSubscribeItem();
+
+                    StringBuilder sb = new StringBuilder();
+                    string msgType = "news";
+                    sb.Append("<xml><ToUserName><![CDATA[");
+                    sb.Append(openId);
+                    sb.Append("]]></ToUserName><FromUserName><![CDATA[");
+                    sb.Append(sendId);
+                    sb.Append("]]></FromUserName><CreateTime>");
+                    sb.Append(GetTimeStamp());
+                    sb.Append("</CreateTime><MsgType><![CDATA[");
+                    sb.Append(msgType);
+                    sb.Append("]]></MsgType>");
+                    sb.Append("<ArticleCount>");
+                    sb.Append("1");
+                    sb.Append("</ArticleCount>");
+                    sb.Append("<Articles>");
+                    sb.Append(items);
+                    sb.Append("</Articles>");
+                    sb.Append("<MsgId></MsgId></xml>");
+
+                    result = sb.ToString();
+                }
+                return result;
+            }
+            catch (Exception ex)
+            {
+                Common.Log.Error(ex.Message);
+                return result;
+            }
+        }
+
+        private static string GetSubscribeItem()
+        {
+            StringBuilder sb = new StringBuilder();
+            sb.Append("<item>");
+            sb.Append("<Title><![CDATA[");
+            sb.Append("欢迎关注海霓科技，u-notebook改变你的生活");
+            sb.Append("]]></Title>");
+            sb.Append("<Description><![CDATA[");
+            sb.Append("最省时间：操作简单 提高工作效率,掌握时间，才能掌握未来。信息时代，速度就是财富。 在数码本上随心书写的同时，也可保存成电子文档。整篇手写真迹一次识别成电子文档，免去重新打字输入的麻烦，为工作节省更多时间，提高工作效率");
+            sb.Append("]]></Description>");
+            sb.Append("<PicUrl><![CDATA[");
+            sb.Append("http://mmbiz.qpic.cn/mmbiz/fBhianiadNmOG6Z27rpNtq27iaQXaUEmArd4UTicaxRAks3nYS1hmtcnqusBiaZvlXyibyQOPvsnMCQkgJlXzSBjWsmA/0");
+            sb.Append("]]></PicUrl>");
+            sb.Append("<Url><![CDATA[");
+            sb.Append("http://www.u-notebook.com");
+            sb.Append("]]></Url>");
+            sb.Append("</item>");
+            return sb.ToString();
+        }
+
+        /// <summary>
         /// 获取默认回复内容
         /// </summary>
         /// <param name="openId">微信接收者</param>
@@ -323,7 +388,7 @@ namespace Common
                 Common.Log.Error(ex.Message);
                 return result;
             }
-            
+
         }
 
 

@@ -37,7 +37,6 @@ namespace weixin
                     string signature = context.Request.QueryString["signature"];
                     string timestamp = context.Request.QueryString["timestamp"];
                     string nonce = context.Request.QueryString["nonce"];
-
                     bool result = Common.WeiXinOperation.ValidUrl(token, echoStr, signature, timestamp, nonce);
                     if (result)
                     {
@@ -69,7 +68,6 @@ namespace weixin
                 string sReqTimeStamp = context.Request.QueryString["timestamp"];
                 string sReqNonce = context.Request.QueryString["nonce"];
 
-
                 string sMsg = "";  //解析之后的明文
                 int ret = 0;
                 ret = wxcpt.DecryptMsg(sReqMsgSig, sReqTimeStamp, sReqNonce, sReqData, ref sMsg);
@@ -78,10 +76,13 @@ namespace weixin
                     Common.Log.Error("ERR: Decrypt fail, ret: " + ret);
                     return;
                 }
-                Model.Message blogModel = Common.XmlOperation.XmlToEntity(sMsg);
+                Common.Log.Error("接收到的微信消息：" + sMsg);
+                //string msgType = Common.XmlOperation.GetMsgType(sMsg);
+
+
+                //Model.Message blogModel = Common.XmlOperation.XmlToEntity(sMsg);
                 //记录到数据库
-                DAL.DataAcess.Add(blogModel);
-                //Common.Log.Error("接收到的微信消息：" + sMsg);
+                //DAL.DataAcess.Add(blogModel);
 
                 //回复消息
                 XmlDocument rdoc = new XmlDocument();
@@ -154,6 +155,21 @@ namespace weixin
                     ret = wxcpt.EncryptMsg(voiceContent, sReqTimeStamp, sReqNonce, ref voiceEncryptMsg);
                     context.Response.Write(voiceEncryptMsg);
                     context.Response.End();
+                }
+                else if (msgType == "event")
+                {
+                    //subscribe为关注，unsubscribe为取消关注
+                    string getevent = rRoot["Event"].InnerText;
+                    if (getevent == "subscribe")
+                    {
+                        //关注事件
+                        string subscribeContent = Common.WeiXinOperation.GetSubscribeContent(openId, sendId);
+                        string subscribeEncryptMsg = ""; //xml格式的密文
+                        ret = wxcpt.EncryptMsg(subscribeContent, sReqTimeStamp, sReqNonce, ref subscribeEncryptMsg);
+                        context.Response.Write(subscribeEncryptMsg);
+                        context.Response.End();
+
+                    }
                 }
                 else
                 {
